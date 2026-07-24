@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ kitap.baslik }} — Kitap Kulübü</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .star-rating {
+            direction: rtl;
+            display: inline-flex;
+            font-size: 1.8rem;
+        }
+        .star-rating input { display: none; }
+        .star-rating label {
+            color: #ddd;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #ffc107;
+        }
+
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .default-book-cover-detail {
+            height: 320px;
+            width: 220px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-light min-vh-100 d-flex flex-column">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4" href="/">
+                <i class="fa-solid fa-book-open-reader text-warning me-2"></i>Kitap Kulübü
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profilim' %}" class="btn btn-outline-info btn-sm rounded-pill"><i class="fa-solid fa-bookmark me-1"></i>Kütüphanem</a>
+                {% endif %}
+                <a href="/" class="btn btn-outline-light btn-sm rounded-pill"><i class="fa-solid fa-arrow-left me-1"></i>Ana Sayfa</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5 flex-grow-1" style="max-width: 900px;">
+
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-5">
+            <div class="row g-0">
+                <div class="col-md-4 text-center bg-dark bg-opacity-10 d-flex align-items-center justify-content-center p-4">
+                    {% if kitap.kapak_resmi and kitap.kapak_resmi.name %}
+                        <img src="{{ kitap.kapak_resmi.url }}" class="img-fluid rounded-3 shadow" style="max-height: 350px; object-fit: cover;" alt="{{ kitap.baslik }}">
+                    {% else %}
+                        <div class="default-book-cover-detail shadow">
+                            <i class="fa-solid fa-book-open-reader text-warning fa-5x mb-3"></i>
+                            <div class="fw-bold fs-5 text-uppercase px-2 text-white">{{ kitap.baslik }}</div>
+                            <small class="text-white-50 mt-1">{{ kitap.yazar }}</small>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8 p-4 d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1">{{ kitap.baslik }}</h2>
+                            <h5 class="text-muted mb-3"><i class="fa-solid fa-pen-nib me-1"></i>{{ kitap.yazar }}</h5>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2">{{ kitap.get_kategori_display }}</span>
+                    </div>
+
+                    <div class="mb-3 d-flex align-items-center gap-2">
+                        <span class="fs-4 text-warning"><i class="fa-solid fa-star"></i> {{ kitap.ortalama_puan }}</span>
+                        <span class="text-muted small">({{ yorumlar.count }} değerlendirme)</span>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <div class="d-flex gap-2 mb-3">
+                            <a href="{% url 'listeye_ekle' kitap.pk 'okunacak' %}" class="btn btn-sm {% if liste_durumu == 'okunacak' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-3">
+                                <i class="fa-solid fa-clock me-1"></i> Okuyacağım
+                            </a>
+                            <a href="{% url 'listeye_ekle' kitap.pk 'okundu' %}" class="btn btn-sm {% if liste_durumu == 'okundu' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3">
+                                <i class="fa-solid fa-check me-1"></i> Okudum
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    <p class="text-secondary lead fs-6 mb-0">{{ kitap.ozet }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 p-4 mb-4">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-star text-warning me-2"></i>Değerlendir ve Yorum Yap</h4>
+
+            {% if user.is_authenticated %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block mb-0">Puanınız:</label>
+                        <div class="star-rating">
+                            <input type="radio" id="star5" name="puan" value="5" checked /><label for="star5" title="5 Yıldız"><i class="fa-solid fa-star"></i></label>
+                            <input type="radio" id="star4" name="puan" value="4" /><label for="star4" title="4 Yıldız"><i class="fa-solid fa-star"></i></label>
+                            <input type="radio" id="star3" name="puan" value="3" /><label for="star3" title="3 Yıldız"><i class="fa-solid fa-star"></i></label>
+                            <input type="radio" id="star2" name="puan" value="2" /><label for="star2" title="2 Yıldız"><i class="fa-solid fa-star"></i></label>
+                            <input type="radio" id="star1" name="puan" value="1" /><label for="star1" title="1 Yıldız"><i class="fa-solid fa-star"></i></label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea name="icerik" class="form-control border-1 rounded-3" rows="3" placeholder="Bu kitap hakkında ne düşünüyorsunuz?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning fw-bold rounded-pill px-4">Yorumu ve Puanı Gönder</button>
+                </form>
+            {% else %}
+                <div class="alert alert-light border text-center mb-0">
+                    Yorum yapmak ve puan vermek için lütfen <a href="{% url 'login' %}" class="fw-bold">Giriş Yapın</a>.
+                </div>
+            {% endif %}
+        </div>
+
+        <h4 class="fw-bold mb-3"><i class="fa-solid fa-comments text-primary me-2"></i>Okur Yorumları</h4>
+
+        <div class="d-flex flex-column gap-3">
+            {% for yorum in yorumlar %}
+                <div class="card border-0 shadow-sm p-3 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle" style="background-color: {% cycle '#1e3c72' '#2a5298' '#00b09b' '#96c93d' '#e17055' '#6c5ce7' %};">
+                                {{ yorum.yazan.username|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <strong class="text-dark d-block mb-0">{{ yorum.yazan.username }}</strong>
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ yorum.tarih|date:"d M Y, H:i" }}</small>
+                            </div>
+                        </div>
+                        <span class="text-warning small">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= yorum.puan %}
+                                    <i class="fa-solid fa-star"></i>
+                                {% else %}
+                                    <i class="fa-regular fa-star text-muted"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    <p class="text-secondary mb-3 ms-1">{{ yorum.icerik }}</p>
+
+                    <div class="d-flex justify-content-end align-items-center">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'yorum_begen' yorum.pk %}" class="btn btn-sm {% if user in yorum.begeniler.all %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-3">
+                                <i class="fa-solid fa-heart me-1"></i> {{ yorum.toplam_begeni }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small">
+                                <i class="fa-solid fa-heart text-danger me-1"></i> {{ yorum.toplam_begeni }} Beğeni
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center text-muted py-4">
+                    Henüz hiç yorum yapılmamış. İlk değerlendiren sen ol!
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</body>
+</html>
